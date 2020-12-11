@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - equirectangular panorama</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <style>
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        border: none;
+        padding: 0;
+        margin: 0;
+      }
+      #slider {
+        position: absolute;
+        bottom: 5px;
+        width: 50%;
+        left: 25%;
+        height: 60px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container" style="width: 100%; height: 100%"></div>
+    <div id="slider">
+      <div style="width: 100%">
+        <input
+          id="radiusInput"
+          type="range"
+          min="100"
+          max="500"
+          value="171"
+          style="width: 100%"
+        />
+      </div>
+      <div id="radius" style="color: white;">Radius: 171</div>
+    </div>
+    <script src="/vendor/three.js"></script>
+    <script src="/vendor/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script>
+      EXIF.enableXmp();
+      let camera, scene, renderer;
+      let radius = 171;
+
+      let isUserInteracting = false,
+        onPointerDownMouseX = 0,
+        onPointerDownMouseY = 0,
+        lon = 0,
+        onPointerDownLon = 0,
+        lat = -30,
+        onPointerDownLat = 0,
+        phi = 0,
+        theta = 0;
+
+      init();
+      animate();
+
+      function init() {
+        const container = document.getElementById("container");
+
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          1,
+          1100
+        );
+        camera.target = new THREE.Vector3(0, 0, 0);
+
+        scene = new THREE.Scene();
+
+        const geometry = new THREE.SphereBufferGeometry(radius + 100, 60, 40);
+        // invert the geometry on the x-axis so that all of the faces point inward
+        geometry.scale(-1, 1, 1);
+
+        // const texture = new THREE.TextureLoader().load("./sample.jpg");
+        const material = new THREE.MeshBasicMaterial({
+          wireframe: true,
+          //   map: texture,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(0, 0, 0);
+        scene.add(light);
+
+        const images = [];
+        const planes = [];
+        // add images
+        for (var idx = 1; idx < 51; idx++) {
+          const url = `./images/${idx}.jpg`;
+          const img = new Image();
+          $(img).on("load", function () {
+            EXIF.getData(img, function () {
+              const attrs =
+                img.xmpdata["x:xmpmeta"]["rdf:RDF"]["rdf:Description"][
+                  "@attributes"
+                ];
+              const yaw = parseFloat(attrs["drone-dji:GimbalYawDegree"]);
+              const pitch = parseFloat(attrs["drone-dji:GimbalPitchDegree"]);
+              const roll = parseFloat(attrs["drone-dji:FlightRollDegree"]);
+
+              // console.log(roll);
+
+              const { x, y, z } = computeLocation(yaw, pitch);
+
+              const loader = new THREE.TextureLoader();
+              loader.load(
+                url,
+                function (texture) {
+                  const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    wireframe: false,
+                  });
+                  const planegeo = new THREE.PlaneBufferGeometry(
+                    img.width,
+                    img.height
+                  );
+                  // planegeo.scale(-1, 1, 1);
+                  const plane = new THREE.Mesh(planegeo, material);
+                  plane.material.side = THREE.DoubleSide;
+                  plane.rotation.z = -roll * Math.PI / 180;
+                  plane.position.x = x;
+                  plane.position.y = y;
+                  plane.position.z = z;
+                  plane.lookAt(0, 0, 0);
+                  scene.add(plane);
+                  planes.push({ plane, yaw, pitch });
+                },
+                function () {},
+                function (err) {
+                  console.log(err);
+                }
+              );
+            });
+          });
+          img.src = url;
+          images.push(img);
+        }
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize($(window).width(), $(window).height());
+        container.appendChild(renderer.domElement);
+
+        container.style.touchAction = "none";
+        container.addEventListener("pointerdown", onPointerDown, false);
+
+        document.addEventListener("wheel", onDocumentMouseWheel, false);
+
+        document.addEventListener(
+          "dragover",
+          function (event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+          },
+          false
+        );
+
+        document.addEventListener(
+          "dragenter",
+          function () {
+            document.body.style.opacity = 0.5;
+          },
+          false
+        );
+
+        document.addEventListener(
+          "dragleave",
+          function () {
+            document.body.style.opacity = 1;
+          },
+          false
+        );
+        window.addEventListener("resize", onWindowResize, false);
+
+        $("#radiusInput").on("input", function () {
+          radius = $(this).val();
+          $('#radius').html(`Radius: ${radius}`)
+          for (const p of planes) {
+            const { plane, yaw, pitch } = p;
+            const { x, y, z } = computeLocation(yaw, pitch);
+            plane.position.x = x;
+            plane.position.y = y;
+            plane.position.z = z;
+            plane.lookAt(0, 0, 0);
+          }
+        });
+      }
+
+      function computeLocation(yaw, pitch) {
+        const phi = THREE.MathUtils.degToRad(90 - pitch);
+        const theta = THREE.MathUtils.degToRad(yaw);
+
+        // create a plane at required position
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.cos(phi);
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+
+        return { x, y, z };
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function onPointerDown(event) {
+        if (event.isPrimary === false) return;
+
+        isUserInteracting = true;
+
+        onPointerDownMouseX = event.clientX;
+        onPointerDownMouseY = event.clientY;
+
+        onPointerDownLon = lon;
+        onPointerDownLat = lat;
+
+        document.addEventListener("pointermove", onPointerMove, false);
+        document.addEventListener("pointerup", onPointerUp, false);
+      }
+
+      function onPointerMove(event) {
+        if (event.isPrimary === false) return;
+
+        lon = (onPointerDownMouseX - event.clientX) * 0.1 + onPointerDownLon;
+        lat = (event.clientY - onPointerDownMouseY) * 0.1 + onPointerDownLat;
+      }
+
+      function onPointerUp() {
+        if (event.isPrimary === false) return;
+
+        isUserInteracting = false;
+
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+      }
+
+      function onDocumentMouseWheel(event) {
+        const fov = camera.fov + event.deltaY * 0.05;
+
+        camera.fov = THREE.MathUtils.clamp(fov, 10, 75);
+
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        update();
+      }
+
+      function update() {
+        if (isUserInteracting === false) {
+          lon += 0.1;
+        }
+
+        lat = Math.max(-85, Math.min(85, lat));
+        phi = THREE.MathUtils.degToRad(90 - lat);
+        theta = THREE.MathUtils.degToRad(lon);
+
+        camera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
+        camera.target.y = 500 * Math.cos(phi);
+        camera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+        camera.lookAt(camera.target);
+        renderer.render(scene, camera);
+      }
+    </script>
+  </body>
+</html>

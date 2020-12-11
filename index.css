@@ -1,0 +1,73 @@
+html {
+  font-size: calc(1em + 0.5vw);
+}
+
+@media screen and (min-width: 50em) {
+  html {
+    font-size: 1.5em;
+  }
+}
+
+h1,
+h2 {
+  font-size: 1em;
+  margin: 0.5em;
+}
+
+pre {
+  overflow: auto;
+}
+
+.root {
+  max-width: 40em;
+  margin: auto;
+}
+
+.blog-header {
+  margin: 0.5em;
+  padding: 0.5em;
+  border-radius: 2em;
+}
+
+.blog-item {
+  margin: 2em;
+  padding: 1em;
+  /* border-radius: 2em; */
+  border-top: 1px solid #9c7178;
+}
+
+.blog-date,
+.blog-date a {
+  margin: 2em;
+  font-size: 1em;
+}
+
+.blog-item-content {
+  padding: 0.5em;
+  color: #303030;
+}
+
+
+/*
+Toggle panel
+*/
+
+.accordion .content {
+  overflow-y: hidden;
+  height: 0;
+  transition: height 0.3s ease;
+}
+
+.accordion > input[type="checkbox"]:checked ~ .content {
+  height: auto;
+  overflow: visible;
+}
+
+/* end toggle panel */
+
+.codeblock-label {
+  display: block;
+  background-color: gainsboro;
+  border: 1px solid silver;
+  cursor: pointer;
+}
