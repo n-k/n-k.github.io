@@ -8,6 +8,22 @@ export class Config {
             chatHistory: []
         };
         this.config = this.loadConfig();
+        this.listeners = new Set();
+    }
+
+    // Add listener for configuration changes
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+
+    // Remove listener
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+
+    // Notify all listeners of changes
+    notifyListeners() {
+        this.listeners.forEach(callback => callback(this.config));
     }
 
     loadConfig() {

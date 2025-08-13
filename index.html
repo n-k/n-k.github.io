@@ -1,110 +1,15 @@
 <!DOCTYPE html>
-<<<<<<< HEAD
-<html>
-  <head>
-  </head>
-  <body>
-  </body>
-</html>
-=======
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LangChain Tool-Calling Agent</title>
+    <title>AI Agent with Tools</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 AI Agent with Tools</h1>
-            <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
-        </header>
-
-        <div class="chat-container">
-            <div id="chatHistory" class="chat-history">
-                <div class="message system-message">
-                    <div class="message-content">
-                        Welcome! I'm an AI agent with access to tools like DuckDuckGo search. Configure your OpenRouter API key in settings to get started.
-                    </div>
-                </div>
-            </div>
-            
-            <div class="input-container">
-                <input type="text" id="messageInput" placeholder="Ask me anything..." disabled>
-                <button id="sendBtn" disabled>Send</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Settings</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="setting-group">
-                    <label for="apiKey">OpenRouter API Key:</label>
-                    <input type="password" id="apiKey" placeholder="Enter your OpenRouter API key">
-                    <small>Get your API key from <a href="https://openrouter.ai/keys" target="_blank">OpenRouter</a></small>
-                </div>
-                
-                <div class="setting-group">
-                    <label for="modelSelect">Model:</label>
-                    <div class="model-selection">
-                        <select id="modelSelect">
-                            <option value="openai/gpt-4o-mini">GPT-4o Mini (Recommended)</option>
-                            <option value="openai/gpt-4o">GPT-4o</option>
-                            <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                            <option value="meta-llama/llama-3.1-8b-instruct">Llama 3.1 8B</option>
-                        </select>
-                        <button id="searchModelsBtn" class="search-models-btn">Search Models</button>
-                    </div>
-                </div>
-
-                <!-- Model Search Section -->
-                <div id="modelSearchSection" class="setting-group" style="display: none;">
-                    <div class="model-search-header">
-                        <h3>Available Models</h3>
-                        <div class="model-filters">
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="freeModelsFilter">
-                                <span>Free models only</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="toolCallingFilter">
-                                <span>Tool calling support</span>
-                            </label>
-                            <button id="refreshModelsBtn" class="refresh-btn">Refresh</button>
-                        </div>
-                    </div>
-                    <div id="modelSearchResults" class="model-search-results">
-                        <div class="loading-models">Loading models...</div>
-                    </div>
-                </div>
-                
-                <div class="setting-group">
-                    <button id="saveSettings" class="save-btn">Save Settings</button>
-                    <button id="clearHistory" class="clear-btn">Clear Chat History</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" class="loading-indicator">
-        <div class="spinner"></div>
-        <span>AI is thinking...</span>
-    </div>
-
+    <div id="app"></div>
+    
     <!-- Scripts -->
-    <script type="module" src="js/config.js"></script>
-    <script type="module" src="js/tools.js"></script>
-    <script type="module" src="js/models.js"></script>
-    <script type="module" src="js/agent.js"></script>
-    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
->>>>>>> 69c7c29 (Reboot)

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Preact App</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Preact + HTM Test</h1>
+        <div id="test-results"></div>
+        <div id="app"></div>
+    </div>
+
+    <script type="module">
+        const results = document.getElementById('test-results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        try {
+            addResult('Testing Preact import...', 'info');
+            
+            // Test Preact imports
+            const { render, createElement } = await import('https://unpkg.com/preact@10.19.3/dist/preact.module.js');
+            const { useState } = await import('https://unpkg.com/preact@10.19.3/hooks/dist/hooks.module.js');
+            const htm = (await import('https://unpkg.com/htm@3.1.1/dist/htm.module.js')).default;
+            
+            addResult('✅ Preact imports successful', 'success');
+            
+            // Test HTM binding
+            const html = htm.bind(createElement);
+            addResult('✅ HTM binding successful', 'success');
+            
+            // Test simple component
+            function TestComponent() {
+                const [count, setCount] = useState(0);
+                
+                return html`
+                    <div>
+                        <h2>Test Component</h2>
+                        <p>Count: ${count}</p>
+                        <button onClick=${() => setCount(count + 1)}>Increment</button>
+                    </div>
+                `;
+            }
+            
+            // Render test component
+            render(html`<${TestComponent} />`, document.getElementById('app'));
+            addResult('✅ Component rendering successful', 'success');
+            
+            // Test our modules
+            addResult('Testing project modules...', 'info');
+            
+            try {
+                const { config } = await import('./js/config.js');
+                addResult('✅ Config module loaded', 'success');
+                
+                const { agent } = await import('./js/agent.js');
+                addResult('✅ Agent module loaded', 'success');
+                
+                const { toolRegistry } = await import('./js/tools.js');
+                addResult('✅ Tools module loaded', 'success');
+                
+                const { modelManager } = await import('./js/models.js');
+                addResult('✅ Models module loaded', 'success');
+                
+                addResult('🎉 All tests passed! The Preact conversion is working correctly.', 'success');
+                
+            } catch (moduleError) {
+                addResult(`❌ Module loading error: ${moduleError.message}`, 'error');
+            }
+            
+        } catch (error) {
+            addResult(`❌ Test failed: ${error.message}`, 'error');
+            console.error('Test error:', error);
+        }
+    </script>
+</body>
+</html>

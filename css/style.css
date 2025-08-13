@@ -176,7 +176,9 @@ header h1 {
 
 /* Modal Styles */
 .modal {
-    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -575,4 +577,9 @@ header h1 {
 
 .chat-history::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* Hidden utility class */
+.hidden {
+    display: none !important;
 }
