@@ -32,12 +32,14 @@ export class AIAgent {
             // Prepare the system message
             const systemMessage = {
                 role: 'system',
-                content: `You are a helpful AI assistant with access to tools. You can search the web using DuckDuckGo and perform calculations. 
+                content: `You are a helpful AI assistant with access to tools. 
+                You can search the web using DuckDuckGo and perform calculations. 
 
-Available tools:
-${tools.map(tool => `- ${tool.function.name}: ${tool.function.description}`).join('\n')}
+                Available tools:
+                ${tools.map(tool => `- ${tool.function.name}: ${tool.function.description}`).join('\n')}
 
-When you need to use a tool, respond with a function call. Always be helpful and provide clear, accurate information.`
+                When you need to use a tool, respond with a function call.
+                Always be helpful and provide clear, accurate information.`
             };
 
             // Prepare messages for the API
