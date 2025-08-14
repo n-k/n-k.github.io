@@ -146,12 +146,22 @@ export class CalculatorTool {
 export class ToolRegistry {
     constructor() {
         this.tools = new Map();
+        this.activatedTools = new Set();
         this.registerDefaultTools();
+        this.loadActivatedTools();
     }
 
     registerDefaultTools() {
         this.register(new DuckDuckGoSearchTool());
         this.register(new CalculatorTool());
+        
+        // Activate all tools by default if no saved preferences
+        if (this.activatedTools.size === 0) {
+            this.tools.forEach((tool, name) => {
+                this.activatedTools.add(name);
+            });
+            this.saveActivatedTools();
+        }
     }
 
     register(tool) {
@@ -166,8 +176,41 @@ export class ToolRegistry {
         return Array.from(this.tools.values());
     }
 
+    getActivated() {
+        return Array.from(this.tools.values()).filter(tool => 
+            this.activatedTools.has(tool.name)
+        );
+    }
+
+    isToolActivated(name) {
+        return this.activatedTools.has(name);
+    }
+
+    activateTool(name) {
+        if (this.tools.has(name)) {
+            this.activatedTools.add(name);
+            this.saveActivatedTools();
+            return true;
+        }
+        return false;
+    }
+
+    deactivateTool(name) {
+        this.activatedTools.delete(name);
+        this.saveActivatedTools();
+    }
+
+    toggleTool(name) {
+        if (this.isToolActivated(name)) {
+            this.deactivateTool(name);
+            return false;
+        } else {
+            return this.activateTool(name);
+        }
+    }
+
     getToolDefinitions() {
-        return this.getAll().map(tool => ({
+        return this.getActivated().map(tool => ({
             type: 'function',
             function: {
                 name: tool.name,
@@ -182,7 +225,39 @@ export class ToolRegistry {
         if (!tool) {
             throw new Error(`Tool '${name}' not found`);
         }
+        if (!this.isToolActivated(name)) {
+            throw new Error(`Tool '${name}' is not activated`);
+        }
         return await tool.execute(args);
+    }
+
+    loadActivatedTools() {
+        try {
+            const stored = localStorage.getItem('ai-agent-activated-tools');
+            if (stored) {
+                const toolNames = JSON.parse(stored);
+                this.activatedTools = new Set(toolNames);
+            }
+        } catch (error) {
+            console.warn('Failed to load activated tools from localStorage:', error);
+        }
+    }
+
+    saveActivatedTools() {
+        try {
+            const toolNames = Array.from(this.activatedTools);
+            localStorage.setItem('ai-agent-activated-tools', JSON.stringify(toolNames));
+        } catch (error) {
+            console.error('Failed to save activated tools to localStorage:', error);
+        }
+    }
+
+    getToolsStatus() {
+        return this.getAll().map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            activated: this.isToolActivated(tool.name)
+        }));
     }
 }
 

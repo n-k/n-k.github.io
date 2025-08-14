@@ -3,6 +3,7 @@ import { useState, useEffect } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { config } from './config.js';
 import { modelManager } from './models.js';
+import { toolRegistry } from './tools.js';
 
 const html = htm.bind(h);
 
@@ -60,6 +61,7 @@ export function Settings({ isOpen, onClose, onSave }) {
 
     const selectModel = (modelId) => {
         setSelectedModel(modelId);
+        config.setModel(modelId); // Save immediately to config
         showNotification(`Selected model: ${modelManager.getModelById(modelId)?.name || modelId}`, 'info');
     };
 
@@ -132,7 +134,11 @@ export function Settings({ isOpen, onClose, onSave }) {
                     <div class="setting-group">
                         <label>Model:</label>
                         <div class="model-selection">
-                            <select value=${selectedModel} onChange=${(e) => setSelectedModel(e.target.value)}>
+                            <select value=${selectedModel} onChange=${(e) => {
+                                const newModel = e.target.value;
+                                setSelectedModel(newModel);
+                                config.setModel(newModel); // Save immediately to config
+                            }}>
                                 <option value="openai/gpt-4o-mini">GPT-4o Mini (Recommended)</option>
                                 <option value="openai/gpt-4o">GPT-4o</option>
                                 <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
@@ -202,6 +208,34 @@ export function Settings({ isOpen, onClose, onSave }) {
                             </div>
                         </div>
                     `}
+                    
+                    <div class="setting-group">
+                        <label>Active Tools:</label>
+                        <div class="tools-selection">
+                            <p class="tools-description">Select which tools the AI can use:</p>
+                            <div class="tools-list">
+                                ${toolRegistry.getToolsStatus().map(tool => html`
+                                    <div key=${tool.name} class="tool-item">
+                                        <label class="tool-checkbox">
+                                            <input 
+                                                type="checkbox" 
+                                                checked=${tool.activated}
+                                                onChange=${(e) => {
+                                                    const wasActivated = toolRegistry.toggleTool(tool.name);
+                                                    showNotification(
+                                                        `${tool.name} ${wasActivated ? 'activated' : 'deactivated'}`, 
+                                                        'info'
+                                                    );
+                                                }}
+                                            />
+                                            <span class="tool-name">${tool.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                        </label>
+                                        <div class="tool-description">${tool.description}</div>
+                                    </div>
+                                `)}
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="setting-group">
                         <button class="save-btn" onClick=${handleSave}>Save Settings</button>

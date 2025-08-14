@@ -3,6 +3,7 @@ import { useState, useEffect } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { config } from './config.js';
 import { agent } from './agent.js';
+import { toolRegistry } from './tools.js';
 
 const html = htm.bind(h);
 
@@ -86,6 +87,22 @@ export function Chat({ isConfigured, chatHistory, onHistoryUpdate }) {
                         }
                     </div>
                 </div>
+                
+                ${isConfigured && html`
+                    <div class="active-tools-indicator">
+                        <div class="active-tools-header">🔧 Active Tools:</div>
+                        <div class="active-tools-list">
+                            ${toolRegistry.getActivated().length > 0 
+                                ? toolRegistry.getActivated().map(tool => html`
+                                    <span key=${tool.name} class="active-tool-badge">
+                                        ${tool.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </span>
+                                  `)
+                                : html`<span class="no-tools-message">No tools activated. Enable tools in settings.</span>`
+                            }
+                        </div>
+                    </div>
+                `}
                 
                 ${chatHistory.map((message, index) => {
                     if (message.role === 'user' || message.role === 'assistant') {

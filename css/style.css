@@ -68,7 +68,6 @@ header h1 {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    max-height: 500px;
     min-height: 300px;
 }
 
@@ -125,6 +124,48 @@ header h1 {
     margin: 5px 0;
     padding: 8px 12px;
     border-radius: 8px;
+}
+
+/* Active Tools Indicator */
+.active-tools-indicator {
+    margin: 15px 0;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.active-tools-header {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.active-tools-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+}
+
+.active-tool-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #007bff;
+    color: white;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.no-tools-message {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.85rem;
 }
 
 .input-container {
@@ -577,6 +618,98 @@ header h1 {
 
 .chat-history::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* Tool Selection Styles */
+.tools-selection {
+    margin-top: 10px;
+}
+
+.tools-description {
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.tools-list {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.tool-item {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.tool-item:last-child {
+    border-bottom: none;
+}
+
+.tool-item:hover {
+    background: #e9ecef;
+}
+
+.tool-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.tool-checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.tool-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+.tool-description {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.4;
+    margin-left: 24px;
+    padding-left: 0;
+}
+
+.tool-item .tool-checkbox input[type="checkbox"]:checked + .tool-name {
+    color: #007bff;
+}
+
+/* Tool status indicator */
+.tool-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.tool-item {
+    position: relative;
+}
+
+.tool-item:has(input[type="checkbox"]:checked)::before {
+    background: #007bff;
+}
+
+/* Fallback for browsers that don't support :has() */
+.tool-item.active::before {
+    background: #007bff;
 }
 
 /* Hidden utility class */
