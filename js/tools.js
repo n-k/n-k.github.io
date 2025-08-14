@@ -155,6 +155,9 @@ export class ToolRegistry {
         this.register(new DuckDuckGoSearchTool());
         this.register(new CalculatorTool());
         
+        // Register custom tools
+        this.registerCustomTools();
+        
         // Activate all tools by default if no saved preferences
         if (this.activatedTools.size === 0) {
             this.tools.forEach((tool, name) => {
@@ -162,6 +165,26 @@ export class ToolRegistry {
             });
             this.saveActivatedTools();
         }
+    }
+
+    registerCustomTools() {
+        // Register all custom tools from the custom tool manager
+        const customTools = customToolManager.getAllCustomTools();
+        for (const tool of customTools) {
+            this.register(tool);
+        }
+    }
+
+    refreshCustomTools() {
+        // Remove existing custom tools
+        for (const [name, tool] of this.tools.entries()) {
+            if (tool.isCustom) {
+                this.tools.delete(name);
+            }
+        }
+        
+        // Re-register custom tools
+        this.registerCustomTools();
     }
 
     register(tool) {
@@ -261,5 +284,130 @@ export class ToolRegistry {
     }
 }
 
+// Custom tool manager for user-defined tools
+export class CustomToolManager {
+    constructor() {
+        this.customTools = new Map();
+        this.loadCustomTools();
+    }
+
+    loadCustomTools() {
+        try {
+            const stored = localStorage.getItem('ai-agent-custom-tools');
+            if (stored) {
+                const toolsData = JSON.parse(stored);
+                for (const toolData of toolsData) {
+                    this.createToolFromCode(toolData.name, toolData.code, false);
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to load custom tools from localStorage:', error);
+        }
+    }
+
+    saveCustomTools() {
+        try {
+            const toolsData = Array.from(this.customTools.entries()).map(([name, tool]) => ({
+                name: name,
+                code: tool.sourceCode
+            }));
+            localStorage.setItem('ai-agent-custom-tools', JSON.stringify(toolsData));
+        } catch (error) {
+            console.error('Failed to save custom tools to localStorage:', error);
+        }
+    }
+
+    createToolFromCode(name, code, save = true) {
+        try {
+            // Create a safe execution context
+            const toolFunction = new Function('return ' + code)();
+            
+            // Validate the tool structure
+            if (typeof toolFunction !== 'function') {
+                throw new Error('Tool code must return a function (constructor)');
+            }
+
+            // Create an instance of the tool
+            const toolInstance = new toolFunction();
+            
+            // Validate required properties
+            if (!toolInstance.name || !toolInstance.description || !toolInstance.parameters || !toolInstance.execute) {
+                throw new Error('Tool must have name, description, parameters, and execute properties');
+            }
+
+            // Store the tool with its source code
+            toolInstance.sourceCode = code;
+            toolInstance.isCustom = true;
+            
+            // Use the tool's actual name as the key, not the parameter name
+            const toolKey = toolInstance.name;
+            this.customTools.set(toolKey, toolInstance);
+
+            if (save) {
+                this.saveCustomTools();
+            }
+
+            return toolInstance;
+        } catch (error) {
+            console.error('Error creating tool from code:', error);
+            throw new Error(`Failed to create tool: ${error.message}`);
+        }
+    }
+
+    updateTool(name, code) {
+        this.createToolFromCode(name, code, true);
+    }
+
+    deleteTool(name) {
+        this.customTools.delete(name);
+        this.saveCustomTools();
+    }
+
+    getTool(name) {
+        return this.customTools.get(name);
+    }
+
+    getAllCustomTools() {
+        return Array.from(this.customTools.values());
+    }
+
+    getToolCode(name) {
+        const tool = this.customTools.get(name);
+        return tool ? tool.sourceCode : null;
+    }
+
+    validateToolCode(code) {
+        try {
+            const toolFunction = new Function('return ' + code)();
+            if (typeof toolFunction !== 'function') {
+                return { valid: false, error: 'Code must return a constructor function' };
+            }
+
+            const toolInstance = new toolFunction();
+            
+            if (!toolInstance.name || typeof toolInstance.name !== 'string') {
+                return { valid: false, error: 'Tool must have a name property (string)' };
+            }
+            
+            if (!toolInstance.description || typeof toolInstance.description !== 'string') {
+                return { valid: false, error: 'Tool must have a description property (string)' };
+            }
+            
+            if (!toolInstance.parameters || typeof toolInstance.parameters !== 'object') {
+                return { valid: false, error: 'Tool must have a parameters property (object)' };
+            }
+            
+            if (!toolInstance.execute || typeof toolInstance.execute !== 'function') {
+                return { valid: false, error: 'Tool must have an execute method (function)' };
+            }
+
+            return { valid: true, tool: toolInstance };
+        } catch (error) {
+            return { valid: false, error: error.message };
+        }
+    }
+}
+
 // Create and export a singleton instance
+export const customToolManager = new CustomToolManager();
 export const toolRegistry = new ToolRegistry();

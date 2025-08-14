@@ -43,7 +43,7 @@ export class AIAgent {
             };
 
             // Prepare messages for the API
-            const messages = [systemMessage, ...this.conversationHistory];
+            const messages = [systemMessage, ...(this.conversationHistory.filter(m => m.role !== 'system'))];
 
             // Make the API call to OpenRouter
             const response = await this.callOpenRouter(messages, tools);

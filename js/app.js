@@ -5,6 +5,7 @@ import htm from 'https://esm.sh/htm';
 // Import components
 import { Chat } from './chat.js';
 import { Settings } from './settings.js';
+import { ToolsPanel } from './tools-panel.js';
 
 // Import services
 import { config } from './config.js';
@@ -18,6 +19,7 @@ function App() {
     const [isConfigured, setIsConfigured] = useState(config.isConfigured());
     const [chatHistory, setChatHistory] = useState(config.getChatHistory());
     const [showSettings, setShowSettings] = useState(false);
+    const [showToolsPanel, setShowToolsPanel] = useState(false);
 
     // Update configuration state when settings change
     const handleSettingsUpdate = () => {
@@ -30,10 +32,24 @@ function App() {
         }
     };
 
+    const handleClearHistory = () => {
+        if (confirm('Are you sure you want to clear the chat history?')) {
+            config.clearChatHistory();
+            setChatHistory([]);
+            agent.clearHistory();
+        }
+    };
+
     return html`
         <div class="container">
-            <header>
-                <h1>🤖 AI Agent with Tools</h1>
+            <div class="header-buttons">
+                <button 
+                    class="tools-btn" 
+                    title="Tools Manager"
+                    onClick=${() => setShowToolsPanel(true)}
+                >
+                    🔧
+                </button>
                 <button 
                     class="settings-btn" 
                     title="Settings"
@@ -41,7 +57,14 @@ function App() {
                 >
                     ⚙️
                 </button>
-            </header>
+                <button 
+                    class="clear-history-btn" 
+                    title="Clear Chat History"
+                    onClick=${handleClearHistory}
+                >
+                    🗑️
+                </button>
+            </div>
 
             <${Chat} 
                 isConfigured=${isConfigured}
@@ -53,6 +76,11 @@ function App() {
                 isOpen=${showSettings}
                 onClose=${() => setShowSettings(false)}
                 onSave=${handleSettingsUpdate}
+            />
+
+            <${ToolsPanel}
+                isOpen=${showToolsPanel}
+                onClose=${() => setShowToolsPanel(false)}
             />
         </div>
     `;

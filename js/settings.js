@@ -3,7 +3,7 @@ import { useState, useEffect } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { config } from './config.js';
 import { modelManager } from './models.js';
-import { toolRegistry } from './tools.js';
+import { toolRegistry, customToolManager } from './tools.js';
 
 const html = htm.bind(h);
 
@@ -16,6 +16,13 @@ export function Settings({ isOpen, onClose, onSave }) {
     const [freeModelsOnly, setFreeModelsOnly] = useState(false);
     const [toolCallingOnly, setToolCallingOnly] = useState(false);
     const [isLoadingModels, setIsLoadingModels] = useState(false);
+    
+    // Custom tool management state
+    const [showCustomTools, setShowCustomTools] = useState(false);
+    const [editingTool, setEditingTool] = useState(null);
+    const [toolCode, setToolCode] = useState('');
+    const [toolName, setToolName] = useState('');
+    const [validationError, setValidationError] = useState('');
 
     // Apply filters when filter options change
     useEffect(() => {
@@ -77,6 +84,109 @@ export function Settings({ isOpen, onClose, onSave }) {
         config.clearChatHistory();
         onSave(); // Trigger parent to update chat history
         showNotification('Chat history cleared!', 'info');
+    };
+
+    // Custom tool management functions
+    const startNewTool = () => {
+        setEditingTool(null);
+        setToolName('');
+        setToolCode(`function() {
+    this.name = 'my_custom_tool';
+    this.description = 'Description of what this tool does';
+    this.parameters = {
+        type: 'object',
+        properties: {
+            input: {
+                type: 'string',
+                description: 'Input parameter description'
+            }
+        },
+        required: ['input']
+    };
+
+    this.execute = async function(args) {
+        try {
+            const { input } = args;
+            
+            // Your tool logic here
+            const result = \`Processed: \${input}\`;
+            
+            return {
+                success: true,
+                result: result
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                result: \`Error: \${error.message}\`
+            };
+        }
+    };
+}`);
+        setValidationError('');
+    };
+
+    const editTool = (toolName) => {
+        const code = customToolManager.getToolCode(toolName);
+        setEditingTool(toolName);
+        setToolName(toolName);
+        setToolCode(code || '');
+        setValidationError('');
+    };
+
+    const saveTool = () => {
+        if (!toolName.trim()) {
+            setValidationError('Tool name is required');
+            return;
+        }
+
+        const validation = customToolManager.validateToolCode(toolCode);
+        if (!validation.valid) {
+            setValidationError(validation.error);
+            return;
+        }
+
+        try {
+            if (editingTool && editingTool !== toolName) {
+                // Tool name changed, delete old one
+                customToolManager.deleteTool(editingTool);
+                toolRegistry.refreshCustomTools();
+            }
+
+            customToolManager.createToolFromCode(toolName, toolCode);
+            toolRegistry.refreshCustomTools();
+            
+            showNotification(`Tool '${toolName}' saved successfully!`, 'success');
+            setEditingTool(null);
+            setToolName('');
+            setToolCode('');
+            setValidationError('');
+        } catch (error) {
+            setValidationError(error.message);
+        }
+    };
+
+    const deleteTool = (toolName) => {
+        if (confirm(`Are you sure you want to delete the tool '${toolName}'?`)) {
+            customToolManager.deleteTool(toolName);
+            toolRegistry.refreshCustomTools();
+            showNotification(`Tool '${toolName}' deleted successfully!`, 'info');
+            
+            if (editingTool === toolName) {
+                setEditingTool(null);
+                setToolName('');
+                setToolCode('');
+                setValidationError('');
+            }
+        }
+    };
+
+    const cancelEdit = () => {
+        setEditingTool(null);
+        setToolName('');
+        setToolCode('');
+        setValidationError('');
     };
 
     const showNotification = (message, type = 'info') => {
@@ -209,37 +319,9 @@ export function Settings({ isOpen, onClose, onSave }) {
                         </div>
                     `}
                     
-                    <div class="setting-group">
-                        <label>Active Tools:</label>
-                        <div class="tools-selection">
-                            <p class="tools-description">Select which tools the AI can use:</p>
-                            <div class="tools-list">
-                                ${toolRegistry.getToolsStatus().map(tool => html`
-                                    <div key=${tool.name} class="tool-item">
-                                        <label class="tool-checkbox">
-                                            <input 
-                                                type="checkbox" 
-                                                checked=${tool.activated}
-                                                onChange=${(e) => {
-                                                    const wasActivated = toolRegistry.toggleTool(tool.name);
-                                                    showNotification(
-                                                        `${tool.name} ${wasActivated ? 'activated' : 'deactivated'}`, 
-                                                        'info'
-                                                    );
-                                                }}
-                                            />
-                                            <span class="tool-name">${tool.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                        </label>
-                                        <div class="tool-description">${tool.description}</div>
-                                    </div>
-                                `)}
-                            </div>
-                        </div>
-                    </div>
                     
                     <div class="setting-group">
                         <button class="save-btn" onClick=${handleSave}>Save Settings</button>
-                        <button class="clear-btn" onClick=${handleClearHistory}>Clear Chat History</button>
                     </div>
                 </div>
             </div>
